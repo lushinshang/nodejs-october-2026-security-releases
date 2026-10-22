@@ -12,6 +12,7 @@ Node.js 在 2026-10-21 發布安全更新，修補 10 個 CVE（4 個 high、3 �
 |---|---|
 | `index.html` | 發布網頁本體 |
 | `nodejs-october-2026-security-releases.md` | 導讀 Markdown 原稿 |
+| `images/` | 全貌資訊圖（16:9、9:16 兩版） |
 | `share_post.md` | 社群分享文 |
 
 ## 原始素材

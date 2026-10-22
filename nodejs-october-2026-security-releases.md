@@ -52,9 +52,24 @@ sources:
 | 10/21 19:27 | 10/22 03:27 | 上游 google/brotli 發布 v1.2.1，release notes 寫明 CVE-2026-111497 | [google/brotli v1.2.1](https://github.com/google/brotli/releases/tag/v1.2.1) |
 | —（來源只寫日期） | 10/22 | 香港 HKCERT 發布公告，風險等級列 Medium | [HKCERT](https://www.hkcert.org/security-bulletin/node-js-multiple-vulnerabilities_20261022) |
 
+```mermaid
+flowchart TD
+    E1["憑證線 10/17<br/>Google 收到通報，Chrome 開始封鎖"] --> E2["憑證線 10/19–10/20<br/>Apple、Microsoft 封鎖，Go 先行修補"] --> E3["憑證線 10/20<br/>Node PR #66871 合併，內建封鎖清單"]
+    E3 -- "同批更新發布" --> C1["CVE 線 10/21<br/>修正版 v22.23.4／v24.22.1／v26.12.1"]
+    C1 --> C2["CVE 線 10/21 19:27 UTC<br/>google/brotli v1.2.1"] --> C3["CVE 線 10/22<br/>HKCERT 公告，風險等級列 Medium"]
+    classDef cert fill:#fff4d6,stroke:#c8a13a,color:#222
+    classDef cve fill:#e3ecf7,stroke:#5b7fa8,color:#222
+    class E1,E2,E3 cert
+    class C1,C2,C3 cve
+```
+*黃色是 eMudhra 憑證線，藍色是 Node 的 10 個 CVE 線，兩條線在 10/21 的 Node 更新合流。*
+
 官方公告頁沒有時間標籤，上表 10:32–10:36 UTC 是下載目錄的檔案時間，只能當線索；`dist/index.json` 對 v22.23.4、v24.22.1 記的日期還是 10/20，各處時間來源並不一致。
 
 ## 二、10 個 CVE 逐項看
+
+![Node.js 10 月安全更新全貌：high 4 個、medium 3 個、low 3 個，加上依賴更新與修正版本。](images/nodejs-overview_16x9.png)
+*全貌：10 個 CVE 依官方嚴重度分組，下方是同批依賴更新與修正版本。*
 
 下表的嚴重度、影響版本線都照官方公告。「說明」欄是官方標題的意譯，官方沒有寫的機制與利用條件，本文也不推測。
 
@@ -154,6 +169,23 @@ CVE-2026-111497 是這次最多人提的一項，因為標題直接寫 remote co
 ## 七、行動清單
 
 ### 開發與維運
+
+```mermaid
+flowchart TD
+    S["我的服務用 Node"] --> Q1{"版本線是<br/>22／24／26？"}
+    Q1 -- "否" --> X1["EOL 版本一律受影響<br/>換到仍在支援的版本線"]
+    Q1 -- "是" --> Q2{"已升到修正版？"}
+    Q2 -- "否" --> X2["升級並重啟所有行程"]
+    Q2 -- "是" --> Q3{"Node 是發行版套件？"}
+    Q3 -- "是" --> X3["確認是否連結系統 Brotli<br/>若是，核對發行版的 Brotli 修補狀態"]
+    Q3 -- "否" --> Q4{"有舊版打包產物？"}
+    X3 --> Q4
+    Q4 -- "是" --> X4["SEA、snapshot、容器映像<br/>用新版重建"]
+    Q4 -- "否" --> X5["再盤點 eMudhra 憑證鏈"]
+    X4 --> X5
+```
+*我的 Node 修好了嗎：依序檢查版本線、版本號、安裝來源與打包產物。修正版指 v22.23.4、v24.22.1、v26.12.1 以上。*
+
 
 1. 查實際在跑的版本：`node -v`。要升到 v22.23.4、v24.22.1 或 v26.12.1 以上。
 2. 升級後重啟所有行程，包含 PM2、systemd、Kubernetes 的 Pod。

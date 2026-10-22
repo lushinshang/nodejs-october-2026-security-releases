@@ -10,7 +10,12 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:title" content="Node.js 10 月安全更新導讀：10 個 CVE、Brotli 的 RCE 與 eMudhra 憑證，你的服務該查什麼">
 <meta property="og:description" content="Node.js 2026-10-21 安全更新（v22.23.4、v24.22.1、v26.12.1，10 個 CVE）導讀：以 nodejs.org 官方公告為主軸，整理 Brotli RCE、TLS 主機名稱驗證、eMudhra 憑證事件，對照各方說法並提供升級與暫行措施。">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://lushinshang.github.io/nodejs-october-2026-security-releases/images/nodejs-overview_16x9.png">
+<meta property="og:image:width" content="1920">
+<meta property="og:image:height" content="1080">
+<meta property="og:image:alt" content="Node.js 10 月安全更新全貌：10 個 CVE 依嚴重度分組，加上依賴更新與修正版本">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://lushinshang.github.io/nodejs-october-2026-security-releases/images/nodejs-overview_16x9.png">
 <meta name="twitter:title" content="Node.js 10 月安全更新導讀：10 個 CVE、Brotli 的 RCE 與 eMudhra 憑證，你的服務該查什麼">
 <meta name="twitter:description" content="Node.js 2026-10-21 安全更新（v22.23.4、v24.22.1、v26.12.1，10 個 CVE）導讀：以 nodejs.org 官方公告為主軸，整理 Brotli RCE、TLS 主機名稱驗證、eMudhra 憑證事件，對照各方說法並提供升級與暫行措施。">
 <meta property="og:url" content="https://lushinshang.github.io/nodejs-october-2026-security-releases/">
@@ -133,8 +138,17 @@ footer{max-width:720px;margin:64px auto 0;padding-top:16px;border-top:1px solid 
 <h2 id="sec-2">一、事件時間線</h2>
 <p>先把順序排清楚。這次有兩條線同時進行：Node 自己的 10 個 CVE，以及一個從 10/17 開始的憑證事件。</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="表格（可左右捲動）"><table><thead><tr><th scope="col">UTC</th><th scope="col">台灣時間</th><th scope="col">事件</th><th scope="col">來源</th></tr></thead><tbody><tr><td data-label="UTC">10/17 18:05</td><td data-label="台灣時間">10/18 02:05</td><td data-label="事件">Google 收到通報：8 張 eMudhra 中繼 CA 憑證的私鑰可被還原</td><td data-label="來源"><a href="https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/" target="_blank" rel="noopener noreferrer">Google 部落格</a></td></tr><tr><td data-label="UTC">10/17 19:45</td><td data-label="台灣時間">10/18 03:45</td><td data-label="事件">Chrome 以 CRLSet 依公鑰雜湊封鎖受影響的中繼憑證</td><td data-label="來源"><a href="https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/" target="_blank" rel="noopener noreferrer">Google 部落格</a></td></tr><tr><td data-label="UTC">10/20（來源只寫日期）</td><td data-label="台灣時間">—</td><td data-label="事件">Go 先行修補（CVE-2026-111943）；Node 的封鎖清單 PR #66871 合併</td><td data-label="來源"><a href="https://thehackernews.com/2026/10/eight-emudhra-ca-keys-compromised.html" target="_blank" rel="noopener noreferrer">The Hacker News</a>、<a href="https://github.com/nodejs/node/pull/66871" target="_blank" rel="noopener noreferrer">Node PR #66871</a></td></tr><tr><td data-label="UTC">10/21 00:46</td><td data-label="台灣時間">10/21 08:46</td><td data-label="事件">BleepingComputer 報導 Mozilla、Google、Apple 封鎖，軟體表中 Node.js 狀態為「Pending」</td><td data-label="來源"><a href="https://www.bleepingcomputer.com/news/security/mozilla-google-apple-block-compromised-emudhra-ca-certificates/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></td></tr><tr><td data-label="UTC">10/21 10:32–10:36</td><td data-label="台灣時間">10/21 18:32–18:36</td><td data-label="事件">三個修正版的 SHASUMS256.txt 在 nodejs.org/dist 的檔案時間（公告本身只寫日期，沒有時分）</td><td data-label="來源"><a href="https://nodejs.org/dist/" target="_blank" rel="noopener noreferrer">nodejs.org/dist</a></td></tr><tr><td data-label="UTC">10/21 17:36</td><td data-label="台灣時間">10/22 01:36</td><td data-label="事件">一位 Mastodon 使用者稱以 Express 應用測試 Brotli 輸入，行程被 SIGBUS 終止（崩潰，未證明是 RCE）</td><td data-label="來源">Mastodon 貼文</td></tr><tr><td data-label="UTC">10/21 19:27</td><td data-label="台灣時間">10/22 03:27</td><td data-label="事件">上游 google/brotli 發布 v1.2.1，release notes 寫明 CVE-2026-111497</td><td data-label="來源"><a href="https://github.com/google/brotli/releases/tag/v1.2.1" target="_blank" rel="noopener noreferrer">google/brotli v1.2.1</a></td></tr><tr><td data-label="UTC">—（來源只寫日期）</td><td data-label="台灣時間">10/22</td><td data-label="事件">香港 HKCERT 發布公告，風險等級列 Medium</td><td data-label="來源"><a href="https://www.hkcert.org/security-bulletin/node-js-multiple-vulnerabilities_20261022" target="_blank" rel="noopener noreferrer">HKCERT</a></td></tr></tbody></table></div>
+<figure class="diagram"><div class="mermaid-scroll" tabindex="0" role="group" aria-label="流程圖（可左右捲動）"><pre class="mermaid">flowchart TD
+    E1[&quot;憑證線 10/17&lt;br/&gt;Google 收到通報，Chrome 開始封鎖&quot;] --&gt; E2[&quot;憑證線 10/19–10/20&lt;br/&gt;Apple、Microsoft 封鎖，Go 先行修補&quot;] --&gt; E3[&quot;憑證線 10/20&lt;br/&gt;Node PR #66871 合併，內建封鎖清單&quot;]
+    E3 -- &quot;同批更新發布&quot; --&gt; C1[&quot;CVE 線 10/21&lt;br/&gt;修正版 v22.23.4／v24.22.1／v26.12.1&quot;]
+    C1 --&gt; C2[&quot;CVE 線 10/21 19:27 UTC&lt;br/&gt;google/brotli v1.2.1&quot;] --&gt; C3[&quot;CVE 線 10/22&lt;br/&gt;HKCERT 公告，風險等級列 Medium&quot;]
+    classDef cert fill:#fff4d6,stroke:#c8a13a,color:#222
+    classDef cve fill:#e3ecf7,stroke:#5b7fa8,color:#222
+    class E1,E2,E3 cert
+    class C1,C2,C3 cve</pre></div><figcaption>黃色是 eMudhra 憑證線，藍色是 Node 的 10 個 CVE 線，兩條線在 10/21 的 Node 更新合流。</figcaption></figure>
 <p>官方公告頁沒有時間標籤，上表 10:32–10:36 UTC 是下載目錄的檔案時間，只能當線索；<code>dist/index.json</code> 對 v22.23.4、v24.22.1 記的日期還是 10/20，各處時間來源並不一致。</p>
 <h2 id="sec-3">二、10 個 CVE 逐項看</h2>
+<figure class="section-figure"><picture><source media="(max-width: 640px)" srcset="images/nodejs-overview_9x16.png"><img src="images/nodejs-overview_16x9.png" alt="Node.js 10 月安全更新全貌：high 4 個、medium 3 個、low 3 個，加上依賴更新與修正版本。" loading="lazy" tabindex="0" role="button" aria-label="放大圖片：Node.js 10 月安全更新全貌：high 4 個、medium 3 個、low 3 個，加上依賴更新與修正版本。"></picture><figcaption>全貌：10 個 CVE 依官方嚴重度分組，下方是同批依賴更新與修正版本。</figcaption></figure>
 <p>下表的嚴重度、影響版本線都照官方公告。「說明」欄是官方標題的意譯，官方沒有寫的機制與利用條件，本文也不推測。</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="表格（可左右捲動）"><table><thead><tr><th scope="col">CVE</th><th scope="col">嚴重度</th><th scope="col">影響版本線</th><th scope="col">說明（官方標題意譯）</th></tr></thead><tbody><tr><td data-label="CVE">CVE-2026-111497</td><td data-label="嚴重度">high</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）">Brotli decoder 越界寫入，可導致遠端程式碼執行</td></tr><tr><td data-label="CVE">CVE-2026-105482</td><td data-label="嚴重度">high</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）"><code>dns.resolve</code> 遇到含 NUL 字元的名稱會截斷</td></tr><tr><td data-label="CVE">CVE-2026-105483</td><td data-label="嚴重度">high</td><td data-label="影響版本線">26／24</td><td data-label="說明（官方標題意譯）">IP 以全形數字書寫時，TLS 憑證主機名稱驗證可被繞過</td></tr><tr><td data-label="CVE">CVE-2026-106069</td><td data-label="嚴重度">high</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）">主機名稱被「寬鬆解析」成 IP 時，TLS 憑證主機名稱驗證可被繞過</td></tr><tr><td data-label="CVE">CVE-2026-105481</td><td data-label="嚴重度">medium</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）">keep-alive socket 處理了在請求送出前就寫入的回應</td></tr><tr><td data-label="CVE">CVE-2026-106072</td><td data-label="嚴重度">medium</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）">非標準寫法的 IPv4 主機名稱，讓 DNS SAN 能驗證 IP 端點</td></tr><tr><td data-label="CVE">CVE-2026-106074</td><td data-label="嚴重度">medium</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）"><code>crypto.randomUUID()</code> 與 <code>randomInt()</code> 的 entropy cache 被存進 startup snapshot 與 SEA，每個行程重複相同的值</td></tr><tr><td data-label="CVE">CVE-2026-106070</td><td data-label="嚴重度">low</td><td data-label="影響版本線">26</td><td data-label="說明（官方標題意譯）">ZipFile 在 header 驗證失敗後仍回傳攻擊者控制的前綴位元組</td></tr><tr><td data-label="CVE">CVE-2026-106071</td><td data-label="嚴重度">low</td><td data-label="影響版本線">26</td><td data-label="說明（官方標題意譯）">Permission Model 因萬用字元 radix 查詢而多給檔案系統權限</td></tr><tr><td data-label="CVE">CVE-2026-106073</td><td data-label="嚴重度">low</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）">Permission Model 可透過 <code>fs.realpathSync</code> 繞過</td></tr></tbody></table></div>
 <p>表中 CVE-2026-106071 的名稱與版本線依安全公告；release 頁沒有直接標示它對應的 commit，拿 release 頁反查會找不到明確標記。</p>
@@ -168,6 +182,18 @@ footer{max-width:720px;margin:64px auto 0;padding-top:16px;border-top:1px solid 
 <div class="table-scroll" tabindex="0" role="region" aria-label="表格（可左右捲動）"><table><thead><tr><th scope="col">說法</th><th scope="col">誰說</th><th scope="col">與官方</th><th scope="col">怎麼看</th></tr></thead><tbody><tr><td data-label="說法">Brotli 那項是 critical</td><td data-label="誰說">GBHackers</td><td data-label="與官方">官方是 high</td><td data-label="怎麼看">同一篇文章後面又寫「four high-severity」，自相矛盾，以官方為準</td></tr><tr><td data-label="說法">逾 6000 萬張憑證不可信</td><td data-label="誰說">The Register</td><td data-label="與官方">官方沒談</td><td data-label="怎麼看">該報導談的是 eMudhra 全部簽發量，沒有給出處；Mozilla 與 Google 確認外洩的是 8 張中繼憑證，兩者範圍不同，不能當成外洩規模</td></tr><tr><td data-label="說法">這跟 PHP 同一天修補，是同一件事</td><td data-label="誰說">社群上的混用</td><td data-label="與官方">官方未提及 PHP</td><td data-label="怎麼看">兩者修補日期相同，但我們查到的一手資料沒有指出兩者有技術關聯；SecNews 的評論是「不像 PHP 那樣的危機」，屬該站看法</td></tr><tr><td data-label="說法">風險等級 Medium</td><td data-label="誰說">HKCERT</td><td data-label="與官方">官方是 high（最高）</td><td data-label="怎麼看">各機構自己評級，不必然一致；HKCERT 是目前唯一查到的 CERT 層級公告</td></tr><tr><td data-label="說法">技術細節與 PoC 尚未釋出</td><td data-label="誰說">CyberQ（最後修改於 10/21 17:37 UTC，台灣 10/22 01:37）</td><td data-label="與官方">官方未說</td><td data-label="怎麼看">之後有人自稱貼出觸發測試，Vercel 也稱有研究者示範，兩者都沒有第二個來源確認。這句話有時效，引用時要註明時點</td></tr><tr><td data-label="說法">上游尚未打 tag</td><td data-label="誰說">Atlas</td><td data-label="與官方">與 google/brotli v1.2.1 不符</td><td data-label="怎麼看">GitHub 顯示該版本建立於該文標示的發布時間之前</td></tr><tr><td class="k" data-label="說法">Bun 也受影響</td><td data-label="誰說">Lobsters 一則留言、Atlas</td><td data-label="與官方">官方只談 Node</td><td data-label="怎麼看">都沒有驗證，不下結論</td></tr></tbody></table></div>
 <h2 id="sec-8">七、行動清單</h2>
 <h3>開發與維運</h3>
+<figure class="diagram"><div class="mermaid-scroll" tabindex="0" role="group" aria-label="流程圖（可左右捲動）"><pre class="mermaid">flowchart TD
+    S[&quot;我的服務用 Node&quot;] --&gt; Q1{&quot;版本線是&lt;br/&gt;22／24／26？&quot;}
+    Q1 -- &quot;否&quot; --&gt; X1[&quot;EOL 版本一律受影響&lt;br/&gt;換到仍在支援的版本線&quot;]
+    Q1 -- &quot;是&quot; --&gt; Q2{&quot;已升到修正版？&quot;}
+    Q2 -- &quot;否&quot; --&gt; X2[&quot;升級並重啟所有行程&quot;]
+    Q2 -- &quot;是&quot; --&gt; Q3{&quot;Node 是發行版套件？&quot;}
+    Q3 -- &quot;是&quot; --&gt; X3[&quot;確認是否連結系統 Brotli&lt;br/&gt;若是，核對發行版的 Brotli 修補狀態&quot;]
+    Q3 -- &quot;否&quot; --&gt; Q4{&quot;有舊版打包產物？&quot;}
+    X3 --&gt; Q4
+    Q4 -- &quot;是&quot; --&gt; X4[&quot;SEA、snapshot、容器映像&lt;br/&gt;用新版重建&quot;]
+    Q4 -- &quot;否&quot; --&gt; X5[&quot;再盤點 eMudhra 憑證鏈&quot;]
+    X4 --&gt; X5</pre></div><figcaption>我的 Node 修好了嗎：依序檢查版本線、版本號、安裝來源與打包產物。修正版指 v22.23.4、v24.22.1、v26.12.1 以上。</figcaption></figure>
 <ol class="takeaways"><li>查實際在跑的版本：<code>node -v</code>。要升到 v22.23.4、v24.22.1 或 v26.12.1 以上。</li><li>升級後重啟所有行程，包含 PM2、systemd、Kubernetes 的 Pod。</li><li>容器映像重建，並確認基底映像已含修正版。請以映像內實際的 <code>node -v</code> 為準。</li><li>用 Node 打包的產物（SEA、startup snapshot）要用新版重建，原因見 CVE-2026-106074。</li><li>用發行版套件裝 Node 的主機，先確認該套件是否連結系統 Brotli；若是，再核對發行版的 Brotli 修補狀態，不要只看 Node 版本號。</li><li>還在跑 EOL 版本線的，官方明說 EOL 版本一律受影響，要換到仍在支援的版本線（目前公告涵蓋 22、24、26）。</li><li>暫行措施（二手建議，不取代升級）：在反向代理拒絕帶 <code>Content-Encoding: br</code> 的請求。另外有作者實測 <code>fetch()</code> 對回應的 <code>Content-Encoding: br</code> 會解碼（即使送 <code>Accept-Encoding: identity</code>），所以連到不可信伺服器的程式也要注意。</li></ol>
 <h3>企業 IT</h3>
 <ol class="takeaways"><li>先盤點「內含 Node 的東西」：CI runner 與建置映像、內部工具、桌面應用、第三方產品的 Node 內嵌版本。要向廠商確認，不能假設自己的 Node 版本就是產品用的版本。</li><li>盤點 eMudhra 簽發的憑證鏈；若含被封鎖的中繼公鑰，安排更換憑證並驗證升級後的連線。Node 本身仍照安全更新時程升級，不必等盤點完成。</li><li>看外部的防護設定：Vercel 說已對平台上的專案部署 WAF 規則，但稱不涵蓋函式 <code>fetch</code> 外部回應。這是廠商自述，你若用該平台，仍須自己升級依賴。</li></ol>
@@ -209,6 +235,19 @@ footer{max-width:720px;margin:64px auto 0;padding-top:16px;border-top:1px solid 
     if(e.key==='Escape'){close();}
     if(e.key==='Tab'){e.preventDefault();btn.focus();}
   });
+})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js" integrity="sha384-WmdflGW9aGfoBdHc4rRyWzYuAjEmDwMdGdiPNacbwfGKxBW/SO6guzuQ76qjnSlr" crossorigin="anonymous" onerror="void 0"></script>
+<script>
+(function(){
+  if(typeof mermaid==='undefined')return;
+  try{
+    var dark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+    mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:dark?'dark':'default',flowchart:{useMaxWidth:false,htmlLabels:true}});
+    var p=mermaid.run({querySelector:'pre.mermaid'});
+    if(p&&p.catch){p.catch(function(){});}
+  }catch(e){}
 })();
 </script>
 </body>
