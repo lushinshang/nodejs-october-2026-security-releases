@@ -43,11 +43,11 @@ sources:
 
 | UTC | 台灣時間 | 事件 | 來源 |
 |---|---|---|---|
-| 10/17 18:05 | 10/18 02:05 | Google 收到 eMudhra 中繼 CA 私鑰外洩的報告 | [Google 部落格](https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/) |
-| 10/17 19:45 | 10/18 03:45 | Chrome 以 CRLSet 依公鑰雜湊封鎖受影響的中繼憑證 | Google 部落格 |
+| 10/17 18:05 | 10/18 02:05 | Google 收到通報：8 張 eMudhra 中繼 CA 憑證的私鑰可被還原 | [Google 部落格](https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/) |
+| 10/17 19:45 | 10/18 03:45 | Chrome 以 CRLSet 依公鑰雜湊封鎖受影響的中繼憑證 | [Google 部落格](https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/) |
 | 10/20（來源只寫日期） | — | Go 先行修補（CVE-2026-111943）；Node 的封鎖清單 PR #66871 合併 | [The Hacker News](https://thehackernews.com/2026/10/eight-emudhra-ca-keys-compromised.html)、[Node PR #66871](https://github.com/nodejs/node/pull/66871) |
 | 10/21 00:46 | 10/21 08:46 | BleepingComputer 報導 Mozilla、Google、Apple 封鎖，軟體表中 Node.js 狀態為「Pending」 | [BleepingComputer](https://www.bleepingcomputer.com/news/security/mozilla-google-apple-block-compromised-emudhra-ca-certificates/) |
-| 10/21 10:32–10:36 | 10/21 18:32–18:36 | 三個修正版的 SHASUMS256.txt 在 nodejs.org/dist 的檔案時間（公告本身只寫日期，沒有時分） | nodejs.org/dist |
+| 10/21 10:32–10:36 | 10/21 18:32–18:36 | 三個修正版的 SHASUMS256.txt 在 nodejs.org/dist 的檔案時間（公告本身只寫日期，沒有時分） | [nodejs.org/dist](https://nodejs.org/dist/) |
 | 10/21 17:36 | 10/22 01:36 | 一位 Mastodon 使用者稱以 Express 應用測試 Brotli 輸入，行程被 SIGBUS 終止（崩潰，未證明是 RCE） | Mastodon 貼文 |
 | 10/21 19:27 | 10/22 03:27 | 上游 google/brotli 發布 v1.2.1，release notes 寫明 CVE-2026-111497 | [google/brotli v1.2.1](https://github.com/google/brotli/releases/tag/v1.2.1) |
 | —（來源只寫日期） | 10/22 | 香港 HKCERT 發布公告，風險等級列 Medium | [HKCERT](https://www.hkcert.org/security-bulletin/node-js-multiple-vulnerabilities_20261022) |
@@ -71,6 +71,8 @@ sources:
 | CVE-2026-106071 | low | 26 | Permission Model 因萬用字元 radix 查詢而多給檔案系統權限 |
 | CVE-2026-106073 | low | 26／24／22 | Permission Model 可透過 `fs.realpathSync` 繞過 |
 
+表中 CVE-2026-106071 的名稱與版本線依安全公告；release 頁沒有直接標示它對應的 commit，拿 release 頁反查會找不到明確標記。
+
 幾個容易看漏的地方：
 
 - **版本線不同**。105483 只影響 26.x 與 24.x；106070、106071 只影響 26.x。你跑 22.x 的話，這三個不用擔心。
@@ -85,7 +87,7 @@ CVE-2026-111497 是這次最多人提的一項，因為標題直接寫 remote co
 
 **官方沒說**：攻擊者要怎麼把資料送進 decoder、需要多大的資料、有沒有已知的利用。公告頁沒有 CVSS，也沒有任何一句談利用條件。
 
-**上游**：google/brotli 在 10/21 19:27 UTC（台灣 10/22 03:27）發布 v1.2.1，release notes 的安全欄寫著「CVE-2026-111497: out-of-bounds write permits remote code execution」。有一篇詳細的分析文章（Atlas，10/21 20:45 UTC，台灣 10/22 04:45）寫「上游還沒有打包含修補的 tag」，這句話在該文發布時已經過時。
+**上游**：google/brotli 在 10/21 19:27 UTC（台灣 10/22 03:27）發布 v1.2.1，release notes 的安全欄寫著「CVE-2026-111497: out-of-bounds write permits remote code execution」。有一篇詳細的分析文章（Atlas，10/21 20:45 UTC，台灣 10/22 04:45）寫「上游還沒有打包含修補的 tag」，GitHub 顯示 v1.2.1 的建立時間早於該文標示的發布時間，目前頁面也不符這句話（release notes 的編修歷史未核對）。
 
 ### 外界對利用情況的說法
 
@@ -99,13 +101,13 @@ CVE-2026-111497 是這次最多人提的一項，因為標題直接寫 remote co
 
 另外，iThome、SecurityOnline、Cyber Updates 365、cybernote 等報導都明說官方沒有提到在野利用，CISA KEV 在 10/21 14:04 UTC（台灣 22:04）的版本也不含這 10 個 CVE。這個時點早於多數事件，只能當參考。
 
-結論：**截至本文時點，沒有查到任何來源聲稱在野利用；利用細節沒有公開確認。** 這不等於沒有風險——官方標題就寫了 RCE，只是我們不知道門檻多高。
+結論：**截至本文時點，沒有查到任何來源聲稱在野利用；利用細節沒有公開確認。** 這不等於沒有風險——官方標題就寫了 RCE，只是我們不知道門檻多高。另外，Vercel 稱已部署偵測規則，不等於聲稱觀察到在野攻擊。
 
 ### 發行版與部署上的坑
 
 以下幾點來自二手分析（Atlas、Wardio），各發行版的建置設定未逐一核對，請當成「去確認」的提醒：
 
-- 有人指出 Debian、Alpine、Fedora、RHEL 的 nodejs 套件用 `--shared-brotli` 建置，也就是用系統的 brotli 函式庫。如果是這樣，只換 Node 版本不一定換掉 Brotli，要看發行版有沒有更新 brotli 套件。Alpine 追蹤頁在 10/22 07:04 UTC 前後只列出 edge-community 的 `nodejs-current 26.12.1-r0` 已修正，這與「要等 brotli 套件」的說法並不一致，可見這個說法不一定適用所有發行版。
+- 有人指出 Debian、Alpine、Fedora、RHEL 的 nodejs 套件用 `--shared-brotli` 建置，也就是用系統的 brotli 函式庫。如果是這樣，只換 Node 版本不一定換掉 Brotli，要看發行版有沒有更新 brotli 套件。Alpine 追蹤頁在 10/22 07:04 UTC 前後只列出 edge-community 的 `nodejs-current 26.12.1-r0` 已修正；這只說明那個 Node 套件的狀態，各發行版的 Brotli 連結方式與修補方式仍須各自核對。
 - Atlas 說，官方內建 Brotli 的 Node 在修補前後的 `process.versions.brotli` 都顯示 1.1.0，不能用來判斷；改用系統 brotli 的建置（例如 Homebrew）則會顯示系統函式庫的版本。Atlas 建議的偵測法是看 `zlib.constants.BROTLI_DECODER_ERROR_FORMAT_BLOCK_SWITCH` 存不存在。這個常數是這次修補一起加進 Node 的，只能判斷 Node 本身的版本；用 `--shared-brotli` 建置的 Node，還要另外看系統 brotli 套件的版本（`node -p "process.config.variables.node_shared_brotli"` 可以看是否為 shared 建置）。
 - 有人指出 Express 5 的 body-parser 2.x 預設會解壓 `br` 的請求本體，Express 4 則回 415。這是二手說法，影響範圍尚未逐項驗證。
 - Vercel 的說法：Node.js 不會自己解 Brotli 資料，應用程式或其依賴的函式庫解壓攻擊者可控的 Brotli 資料時才會暴露，不論是請求本體，還是自己抓回來的回應。這是廠商自述，但可以拿來判斷你的暴露面。
@@ -135,7 +137,7 @@ CVE-2026-111497 是這次最多人提的一項，因為標題直接寫 remote co
 
 為什麼非瀏覽器的程式也要處理？Scott Helme 的文章指出，curl、Python、Node、Go、Java 這些客戶端預設不檢查撤銷，也不檢查 CT，瀏覽器的封鎖不會自動套到它們身上。
 
-對你有什麼影響：憑證鏈上含那 8 把被封鎖公鑰之一的，升級後 Node 會拒絕。這次 release 也把根憑證更新到 NSS 3.131.1，該版本是否包含 emSign ECC Root CA - G3 的移除，未核對。Google 說 Chrome 未見這些中繼簽發的 TLS 葉憑證進 CT，eMudhra 向 BleepingComputer 表示多數中繼並未用於正式簽發，所以實際受影響的面積可能很小，但要不要確認，取決於你有沒有這條鏈。
+對你有什麼影響：在正常的憑證驗證下，憑證鏈上含那 8 把被封鎖公鑰之一的，升級後 Node 會拒絕；PR 說明也提到，升級前已建立、之後恢復的 TLS session 不會重新驗證。這次 release 也把根憑證更新到 NSS 3.131.1，該版本是否包含 emSign ECC Root CA - G3 的移除，未核對。Google 表示，封鎖前沒有這些中繼簽發的 TLS 憑證進入 CT；這只說明強制 CT 的客戶端，不能用來估計 curl、Node 這類預設不檢查 CT 的客戶端有多少連線受影響。eMudhra 向 BleepingComputer 表示多數中繼並未用於正式簽發。請依實際憑證鏈確認。
 
 ## 六、各方說法對照與澄清
 
@@ -146,7 +148,7 @@ CVE-2026-111497 是這次最多人提的一項，因為標題直接寫 remote co
 | 這跟 PHP 同一天修補，是同一件事 | 社群上的混用 | 官方未提及 PHP | 兩者修補日期相同，但我們查到的一手資料沒有指出兩者有技術關聯；SecNews 的評論是「不像 PHP 那樣的危機」，屬該站看法 |
 | 風險等級 Medium | HKCERT | 官方是 high（最高） | 各機構自己評級，不必然一致；HKCERT 是目前唯一查到的 CERT 層級公告 |
 | 技術細節與 PoC 尚未釋出 | CyberQ（最後修改於 10/21 17:37 UTC，台灣 10/22 01:37） | 官方未說 | 之後有人自稱貼出觸發測試，Vercel 也稱有研究者示範，兩者都沒有第二個來源確認。這句話有時效，引用時要註明時點 |
-| 上游尚未打 tag | Atlas | 與 google/brotli v1.2.1 不符 | 該版本在該文發布前就已存在 |
+| 上游尚未打 tag | Atlas | 與 google/brotli v1.2.1 不符 | GitHub 顯示該版本建立於該文標示的發布時間之前 |
 | Bun 也受影響 | Lobsters 一則留言、Atlas | 官方只談 Node | 都沒有驗證，不下結論 |
 
 ## 七、行動清單
@@ -157,14 +159,14 @@ CVE-2026-111497 是這次最多人提的一項，因為標題直接寫 remote co
 2. 升級後重啟所有行程，包含 PM2、systemd、Kubernetes 的 Pod。
 3. 容器映像重建，並確認基底映像已含修正版。請以映像內實際的 `node -v` 為準。
 4. 用 Node 打包的產物（SEA、startup snapshot）要用新版重建，原因見 CVE-2026-106074。
-5. 用發行版套件裝 Node 的主機，去看發行版有沒有發出 brotli 套件的更新，不要只看 Node 版本號。
+5. 用發行版套件裝 Node 的主機，先確認該套件是否連結系統 Brotli；若是，再核對發行版的 Brotli 修補狀態，不要只看 Node 版本號。
 6. 還在跑 EOL 版本線的，官方明說 EOL 版本一律受影響，要換到仍在支援的版本線（目前公告涵蓋 22、24、26）。
 7. 暫行措施（二手建議，不取代升級）：在反向代理拒絕帶 `Content-Encoding: br` 的請求。另外有作者實測 `fetch()` 對回應的 `Content-Encoding: br` 會解碼（即使送 `Accept-Encoding: identity`），所以連到不可信伺服器的程式也要注意。
 
 ### 企業 IT
 
 1. 先盤點「內含 Node 的東西」：CI runner 與建置映像、內部工具、桌面應用、第三方產品的 Node 內嵌版本。要向廠商確認，不能假設自己的 Node 版本就是產品用的版本。
-2. 有 TLS 流量走 eMudhra 簽發憑證的，升級前先確認是否在那 8 張中繼的鏈上。
+2. 盤點 eMudhra 簽發的憑證鏈；若含被封鎖的中繼公鑰，安排更換憑證並驗證升級後的連線。Node 本身仍照安全更新時程升級，不必等盤點完成。
 3. 看外部的防護設定：Vercel 說已對平台上的專案部署 WAF 規則，但稱不涵蓋函式 `fetch` 外部回應。這是廠商自述，你若用該平台，仍須自己升級依賴。
 
 ### 資安同業
