@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%230f7b6c%27/%3E%3Cpath d=%27M12 46 26 30l8 8 18-22%27 stroke=%27white%27 stroke-width=%277%27 fill=%27none%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E">
+<title>Node.js 10 月安全更新導讀：10 個 CVE、Brotli 的 RCE 與 eMudhra 憑證，你的服務該查什麼</title>
+<meta name="description" content="Node.js 2026-10-21 安全更新（v22.23.4、v24.22.1、v26.12.1，10 個 CVE）導讀：以 nodejs.org 官方公告為主軸，整理 Brotli RCE、TLS 主機名稱驗證、eMudhra 憑證事件，對照各方說法並提供升級與暫行措施。">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:title" content="Node.js 10 月安全更新導讀：10 個 CVE、Brotli 的 RCE 與 eMudhra 憑證，你的服務該查什麼">
+<meta property="og:description" content="Node.js 2026-10-21 安全更新（v22.23.4、v24.22.1、v26.12.1，10 個 CVE）導讀：以 nodejs.org 官方公告為主軸，整理 Brotli RCE、TLS 主機名稱驗證、eMudhra 憑證事件，對照各方說法並提供升級與暫行措施。">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Node.js 10 月安全更新導讀：10 個 CVE、Brotli 的 RCE 與 eMudhra 憑證，你的服務該查什麼">
+<meta name="twitter:description" content="Node.js 2026-10-21 安全更新（v22.23.4、v24.22.1、v26.12.1，10 個 CVE）導讀：以 nodejs.org 官方公告為主軸，整理 Brotli RCE、TLS 主機名稱驗證、eMudhra 憑證事件，對照各方說法並提供升級與暫行措施。">
+<meta property="og:url" content="https://lushinshang.github.io/nodejs-october-2026-security-releases/">
+<style>
+:root{
+  --bg:#f9f7f4; --surface:#fffdf9; --ink:#1a1a1a; --muted:#5f5b54; --line:#e4dfd6;
+  --accent:#0f7b6c; --accent-ink:#0b5c51; --note:#f0ebe1; --code:#ece6d8; --link:#1f5f99;
+  --card:#fff6e8; --card-line:#e8c99a; --shadow:0 6px 24px rgba(40,30,10,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#1b1a18; --surface:#26241f; --ink:#ece8de; --muted:#aaa497; --line:#3a3730;
+    --accent:#4fc1ad; --accent-ink:#7fd6c6; --note:#2f2c25; --code:#33302a; --link:#8fbde8;
+    --card:#2d2820; --card-line:#5b4a30; --shadow:0 6px 24px rgba(0,0,0,.35);}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);overflow-x:hidden;
+  font:17px/1.7 "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;letter-spacing:0}
+.skip{position:absolute;left:-999px;top:0;background:var(--accent);color:#fff;padding:8px 14px;z-index:300}
+.skip:focus{left:8px;top:8px}
+nav.toc{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+nav.toc ul{list-style:none;margin:0 auto;padding:0 16px;max-width:752px;display:flex;gap:6px;overflow-x:auto;
+  white-space:nowrap;-webkit-overflow-scrolling:touch;min-height:52px;align-items:center}
+nav.toc a{display:inline-block;padding:8px 12px;border-radius:999px;color:var(--muted);text-decoration:none;font-size:14px;min-height:36px}
+nav.toc a:hover,nav.toc a:focus-visible{background:var(--note);color:var(--ink)}
+a{color:var(--link);overflow-wrap:anywhere}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.page{max-width:1120px;margin:0 auto;padding:0 20px 80px}
+header.hero{padding:56px 0 8px;text-align:center}
+.eyebrow{margin:0 0 8px;color:var(--accent-ink);font-weight:700;letter-spacing:0;font-size:14px}
+h1{margin:0 auto 14px;max-width:820px;font-size:clamp(1.7rem,1.2rem + 2vw,2.6rem);line-height:1.3;text-wrap:balance}
+.byline{margin:0 0 6px;color:var(--muted);font-size:14px}
+.video-link{margin:0 0 28px;font-size:14px}
+figure{margin:32px 0}
+figure img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;border-radius:12px;
+  box-shadow:var(--shadow);background:var(--surface);cursor:zoom-in}
+@media (max-width:640px){figure picture img{aspect-ratio:9/16}}
+@media (max-width:640px){figure.hero-figure picture img{max-width:170px;margin:0 auto}}
+hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+p.figcap{margin:-18px auto 1.4em;text-align:center;font-size:14px;color:var(--muted)}
+figcaption{margin:10px auto 0;max-width:720px;font-size:14px;line-height:1.55;color:var(--muted);text-align:center}
+article{max-width:720px;margin:0 auto}
+article figure.section-figure{margin-left:50%;transform:translateX(-50%);width:min(860px,calc(100vw - 32px))}
+h2{margin:56px 0 12px;font-size:1.55rem;line-height:1.4;scroll-margin-top:72px;text-wrap:balance;
+  border-left:5px solid var(--accent);padding-left:14px;margin-left:-19px}
+h3{margin:36px 0 8px;font-size:1.2rem;line-height:1.45}
+p{margin:0 0 1.1em}
+ul,ol{margin:0 0 1.2em;padding-left:1.4em}
+li{margin:.35em 0}
+strong{font-weight:700}
+code{background:var(--code);padding:.1em .4em;border-radius:5px;font:0.9em ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-word}
+section.summary-card{background:var(--card);border:1px solid var(--card-line);border-radius:14px;padding:6px 22px 10px;margin:24px 0 8px;box-shadow:var(--shadow)}
+section.summary-card h2{margin:14px 0 8px;font-size:1.2rem;border-left:0;padding-left:0;margin-left:0}
+section.summary-card p{margin:0 0 .8em;font-size:16.5px}
+ol.takeaways{padding-left:1.6em}
+ol.takeaways li{margin:.8em 0;padding-left:.2em}
+ol.takeaways li::marker{color:var(--accent-ink);font-weight:700}
+ul.sources li{overflow-wrap:anywhere}
+aside.note{background:var(--note);border-left:4px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 1.6em;font-size:15px;color:var(--ink)}
+aside.note p,aside.note ul{margin:0 0 .6em}
+aside.note ul{padding-left:1.3em}
+figure.diagram{margin:28px 0}
+.mermaid-scroll{overflow-x:auto;max-width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;-webkit-overflow-scrolling:touch}
+.mermaid-scroll pre{margin:0;font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;color:var(--ink)}
+.mermaid-scroll svg{display:block;margin:0 auto;height:auto;max-width:100%}
+.table-scroll{overflow-x:auto;margin:0 0 1.6em;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.table-scroll table{border-collapse:collapse;width:100%;min-width:560px;font-size:15px;line-height:1.55}
+.table-scroll th,.table-scroll td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.table-scroll th{background:var(--note);font-weight:700}
+.table-scroll tr:last-child td{border-bottom:0}
+.table-scroll td.k{font-weight:600;white-space:nowrap}
+@media (max-width:640px){
+  .table-scroll{overflow-x:visible}
+  .table-scroll table{min-width:0}
+  .table-scroll thead{position:absolute;left:-9999px}
+  .table-scroll tr,.table-scroll td{display:block}
+  .table-scroll tr{padding:10px 12px;border-bottom:1px solid var(--line)}
+  .table-scroll tr:last-child{border-bottom:0}
+  .table-scroll td{padding:2px 0;border:0}
+  .table-scroll td.k{color:var(--accent-ink);white-space:normal}
+  .table-scroll td::before{content:attr(data-label) "：";font-weight:700;color:var(--muted);font-size:13px}
+}
+footer{max-width:720px;margin:64px auto 0;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+.lightbox{display:none;position:fixed;inset:0;z-index:200;background:rgba(20,18,14,.9);align-items:center;justify-content:center;padding:24px}
+.lightbox.is-open{display:flex}
+.lightbox img{max-width:96vw;max-height:90vh;width:auto;height:auto;border-radius:8px;box-shadow:0 12px 48px rgba(0,0,0,.5);background:#fff}
+.lightbox button{position:absolute;top:14px;right:14px;min-width:44px;min-height:44px;padding:8px 14px;border:0;border-radius:999px;
+  background:#fff;color:#222;font-size:15px;cursor:pointer}
+@media (max-width:760px){
+  h2{margin-left:0;border-left:0;padding-left:0;border-top:3px solid var(--accent);padding-top:10px}
+}
+@media (max-width:640px){
+  body{font-size:16px}
+  .page{padding:0 16px 64px}
+  header.hero{padding-top:36px}
+  h2{font-size:1.35rem}
+  section.summary-card{padding:4px 16px 8px}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<nav class="toc" aria-label="章節導覽"><ul><li><a href="#sec-1" title="三十秒版">三十秒版</a></li><li><a href="#sec-2" title="一、事件時間線">時間線</a></li><li><a href="#sec-3" title="二、10 個 CVE 逐項看">10 個 CVE</a></li><li><a href="#sec-4" title="三、Brotli：官方說了什麼，沒說什麼">Brotli</a></li><li><a href="#sec-5" title="四、TLS 主機名稱驗證這一組">TLS 主機名稱</a></li><li><a href="#sec-6" title="五、eMudhra 憑證事件：公告裡那行「ca-cert」">eMudhra</a></li><li><a href="#sec-7" title="六、各方說法對照與澄清">說法對照</a></li><li><a href="#sec-8" title="七、行動清單">行動清單</a></li><li><a href="#sec-9" title="八、結論">結論</a></li><li><a href="#sec-10" title="來源清單">來源</a></li></ul></nav>
+<div class="page">
+<header class="hero">
+<p class="eyebrow">深度導讀</p>
+<h1>Node.js 10 月安全更新導讀：10 個 CVE、Brotli 的 RCE 與 eMudhra 憑證，你的服務該查什麼</h1>
+<p class="byline">整理：2026-10-22　資料截至 10/22 07:14 UTC（台灣 15:14）</p>
+</header>
+<main id="main"><article>
+<aside class="note"><p>以 nodejs.org 2026-10-21 官方公告為主軸，對照上游修補、各國機關與廠商的說法，整理升級與暫行措施。</p><p>時間一律先寫 UTC，括號內是台灣時間（UTC+8）。本文資料截至 2026-10-22 07:14 UTC（台灣 15:14），之後的變化沒有涵蓋。</p></aside>
+<section class="summary-card" aria-labelledby="sec-1">
+<h2 id="sec-1">三十秒版</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="表格（可左右捲動）"><table><thead><tr><th scope="col">項目</th><th scope="col">內容</th></tr></thead><tbody><tr><td class="k" data-label="項目">修正版本</td><td data-label="內容">Node.js v22.23.4、v24.22.1、v26.12.1（2026-10-21 發布），見<a href="https://nodejs.org/en/blog/vulnerability/october-2026-security-releases" target="_blank" rel="noopener noreferrer">官方公告</a></td></tr><tr><td class="k" data-label="項目">漏洞數量</td><td data-label="內容">10 個 CVE：4 個 high、3 個 medium、3 個 low；官方寫明最高嚴重度為 HIGH</td></tr><tr><td class="k" data-label="項目">最受矚目的一項</td><td data-label="內容">CVE-2026-111497：Brotli decoder 越界寫入，官方標題寫「permits remote code execution」，影響 26.x、24.x、22.x</td></tr><tr><td data-label="項目">另外三個 high</td><td data-label="內容"><code>dns.resolve</code> 遇到 NUL 字元會截斷名稱（CVE-2026-105482），以及兩個 TLS 憑證主機名稱驗證可被繞過的問題（CVE-2026-105483、CVE-2026-106069）</td></tr><tr><td class="k" data-label="項目">依賴更新</td><td data-label="內容">c-ares、ca-cert（eMudhra 中繼 CA 事件）、OpenSSL、SQLite、Undici</td></tr><tr><td class="k" data-label="項目">官方沒說的</td><td data-label="內容">沒有 CVSS 分數、沒有利用條件，也沒有提到在野利用</td></tr><tr><td class="k" data-label="項目">今天要做的事</td><td data-label="內容">查你實際跑的 <code>node -v</code>，升到修正版，重啟所有行程，容器映像與打包產物重建</td></tr></tbody></table></div>
+<p>官方公告沒有寫利用條件；外界則出現了各種說法：有人把它跟同一天修補的 PHP 事件放在一起講，有廠商說已有研究者示範過，也有媒體把 Brotli 那一項寫成 critical。本文要回答的是：官方到底說了什麼，各方說法哪些對得上、哪些要打折。</p>
+<p>做法跟之前的 <a href="https://lushinshang.github.io/php2shell-cve-2026-109618/" target="_blank" rel="noopener noreferrer">PHP2Shell 導讀</a>一樣：以官方公告為準，其他說法都標明是誰說的、截至什麼時候。</p>
+</section>
+<h2 id="sec-2">一、事件時間線</h2>
+<p>先把順序排清楚。這次有兩條線同時進行：Node 自己的 10 個 CVE，以及一個從 10/17 開始的憑證事件。</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="表格（可左右捲動）"><table><thead><tr><th scope="col">UTC</th><th scope="col">台灣時間</th><th scope="col">事件</th><th scope="col">來源</th></tr></thead><tbody><tr><td data-label="UTC">10/17 18:05</td><td data-label="台灣時間">10/18 02:05</td><td data-label="事件">Google 收到 eMudhra 中繼 CA 私鑰外洩的報告</td><td data-label="來源"><a href="https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/" target="_blank" rel="noopener noreferrer">Google 部落格</a></td></tr><tr><td data-label="UTC">10/17 19:45</td><td data-label="台灣時間">10/18 03:45</td><td data-label="事件">Chrome 以 CRLSet 依公鑰雜湊封鎖受影響的中繼憑證</td><td data-label="來源">Google 部落格</td></tr><tr><td data-label="UTC">10/20（來源只寫日期）</td><td data-label="台灣時間">—</td><td data-label="事件">Go 先行修補（CVE-2026-111943）；Node 的封鎖清單 PR #66871 合併</td><td data-label="來源"><a href="https://thehackernews.com/2026/10/eight-emudhra-ca-keys-compromised.html" target="_blank" rel="noopener noreferrer">The Hacker News</a>、<a href="https://github.com/nodejs/node/pull/66871" target="_blank" rel="noopener noreferrer">Node PR #66871</a></td></tr><tr><td data-label="UTC">10/21 00:46</td><td data-label="台灣時間">10/21 08:46</td><td data-label="事件">BleepingComputer 報導 Mozilla、Google、Apple 封鎖，軟體表中 Node.js 狀態為「Pending」</td><td data-label="來源"><a href="https://www.bleepingcomputer.com/news/security/mozilla-google-apple-block-compromised-emudhra-ca-certificates/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></td></tr><tr><td data-label="UTC">10/21 10:32–10:36</td><td data-label="台灣時間">10/21 18:32–18:36</td><td data-label="事件">三個修正版的 SHASUMS256.txt 在 nodejs.org/dist 的檔案時間（公告本身只寫日期，沒有時分）</td><td data-label="來源">nodejs.org/dist</td></tr><tr><td data-label="UTC">10/21 17:36</td><td data-label="台灣時間">10/22 01:36</td><td data-label="事件">一位 Mastodon 使用者稱以 Express 應用測試 Brotli 輸入，行程被 SIGBUS 終止（崩潰，未證明是 RCE）</td><td data-label="來源">Mastodon 貼文</td></tr><tr><td data-label="UTC">10/21 19:27</td><td data-label="台灣時間">10/22 03:27</td><td data-label="事件">上游 google/brotli 發布 v1.2.1，release notes 寫明 CVE-2026-111497</td><td data-label="來源"><a href="https://github.com/google/brotli/releases/tag/v1.2.1" target="_blank" rel="noopener noreferrer">google/brotli v1.2.1</a></td></tr><tr><td data-label="UTC">—（來源只寫日期）</td><td data-label="台灣時間">10/22</td><td data-label="事件">香港 HKCERT 發布公告，風險等級列 Medium</td><td data-label="來源"><a href="https://www.hkcert.org/security-bulletin/node-js-multiple-vulnerabilities_20261022" target="_blank" rel="noopener noreferrer">HKCERT</a></td></tr></tbody></table></div>
+<p>官方公告頁沒有時間標籤，上表 10:32–10:36 UTC 是下載目錄的檔案時間，只能當線索；<code>dist/index.json</code> 對 v22.23.4、v24.22.1 記的日期還是 10/20，各處時間來源並不一致。</p>
+<h2 id="sec-3">二、10 個 CVE 逐項看</h2>
+<p>下表的嚴重度、影響版本線都照官方公告。「說明」欄是官方標題的意譯，官方沒有寫的機制與利用條件，本文也不推測。</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="表格（可左右捲動）"><table><thead><tr><th scope="col">CVE</th><th scope="col">嚴重度</th><th scope="col">影響版本線</th><th scope="col">說明（官方標題意譯）</th></tr></thead><tbody><tr><td data-label="CVE">CVE-2026-111497</td><td data-label="嚴重度">high</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）">Brotli decoder 越界寫入，可導致遠端程式碼執行</td></tr><tr><td data-label="CVE">CVE-2026-105482</td><td data-label="嚴重度">high</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）"><code>dns.resolve</code> 遇到含 NUL 字元的名稱會截斷</td></tr><tr><td data-label="CVE">CVE-2026-105483</td><td data-label="嚴重度">high</td><td data-label="影響版本線">26／24</td><td data-label="說明（官方標題意譯）">IP 以全形數字書寫時，TLS 憑證主機名稱驗證可被繞過</td></tr><tr><td data-label="CVE">CVE-2026-106069</td><td data-label="嚴重度">high</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）">主機名稱被「寬鬆解析」成 IP 時，TLS 憑證主機名稱驗證可被繞過</td></tr><tr><td data-label="CVE">CVE-2026-105481</td><td data-label="嚴重度">medium</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）">keep-alive socket 處理了在請求送出前就寫入的回應</td></tr><tr><td data-label="CVE">CVE-2026-106072</td><td data-label="嚴重度">medium</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）">非標準寫法的 IPv4 主機名稱，讓 DNS SAN 能驗證 IP 端點</td></tr><tr><td data-label="CVE">CVE-2026-106074</td><td data-label="嚴重度">medium</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）"><code>crypto.randomUUID()</code> 與 <code>randomInt()</code> 的 entropy cache 被存進 startup snapshot 與 SEA，每個行程重複相同的值</td></tr><tr><td data-label="CVE">CVE-2026-106070</td><td data-label="嚴重度">low</td><td data-label="影響版本線">26</td><td data-label="說明（官方標題意譯）">ZipFile 在 header 驗證失敗後仍回傳攻擊者控制的前綴位元組</td></tr><tr><td data-label="CVE">CVE-2026-106071</td><td data-label="嚴重度">low</td><td data-label="影響版本線">26</td><td data-label="說明（官方標題意譯）">Permission Model 因萬用字元 radix 查詢而多給檔案系統權限</td></tr><tr><td data-label="CVE">CVE-2026-106073</td><td data-label="嚴重度">low</td><td data-label="影響版本線">26／24／22</td><td data-label="說明（官方標題意譯）">Permission Model 可透過 <code>fs.realpathSync</code> 繞過</td></tr></tbody></table></div>
+<p>幾個容易看漏的地方：</p>
+<ul><li><strong>版本線不同</strong>。105483 只影響 26.x 與 24.x；106070、106071 只影響 26.x。你跑 22.x 的話，這三個不用擔心。</li><li><strong>TLS 主機名稱這一組有三個</strong>（105483、106069、106072）。官方標題都跟 IP 與主機名稱的比對有關，細節沒有展開。106069 與 106072 共用一個修補（<code>tls: reject non-canonical IP addresses</code>），105483 是另一個（<code>tls: fix ip normalization regression</code>）。</li><li><strong>106074 可能要重建產物</strong>。這項講的是 snapshot 與 SEA（單一可執行檔應用）裡被存進去的隨機數快取，依 <a href="https://xenospectrum.com/en/nodejs-october-security-tls-snapshot/" target="_blank" rel="noopener noreferrer">XenoSpectrum</a> 的說法，SEA 與 snapshot 需要重建。如果你的產物是用舊版 Node 打包出來的，升級後用新版重新打包。</li></ul>
+<h2 id="sec-4">三、Brotli：官方說了什麼，沒說什麼</h2>
+<p>CVE-2026-111497 是這次最多人提的一項，因為標題直接寫 remote code execution。</p>
+<p><strong>官方說了</strong>：這是 Node.js Brotli decoder 的越界寫入，可導致遠端程式碼執行，影響 26.x、24.x、22.x，嚴重度 high。回報者是 mcollina，修正者是 aduh95。修補內容是 cherry-pick 上游的一個 commit（<code>0ed4268a…</code>，訊息是 Detect and report invalid stream earlier），commit 訊息帶有這個 CVE 編號。</p>
+<p><strong>官方沒說</strong>：攻擊者要怎麼把資料送進 decoder、需要多大的資料、有沒有已知的利用。公告頁沒有 CVSS，也沒有任何一句談利用條件。</p>
+<p><strong>上游</strong>：google/brotli 在 10/21 19:27 UTC（台灣 10/22 03:27）發布 v1.2.1，release notes 的安全欄寫著「CVE-2026-111497: out-of-bounds write permits remote code execution」。有一篇詳細的分析文章（Atlas，10/21 20:45 UTC，台灣 10/22 04:45）寫「上游還沒有打包含修補的 tag」，這句話在該文發布時已經過時。</p>
+<h3>外界對利用情況的說法</h3>
+<p>下表記錄外界對利用情況的說法與一則實測，彼此層級不同，目前都沒有第二個來源確認。</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="表格（可左右捲動）"><table><thead><tr><th scope="col">誰說</th><th scope="col">說了什麼</th><th scope="col">怎麼看</th></tr></thead><tbody><tr><td data-label="誰說"><a href="https://vercel.com/kb/bulletin/node-js-security-advisory" target="_blank" rel="noopener noreferrer">Vercel</a></td><td data-label="說了什麼">「Researchers demonstrated process-memory disclosure and command execution」，並稱已部署 WAF 規則</td><td data-label="怎麼看">沒有給出處、沒有具名研究者；官方公告沒有這句。這是 Vercel 自己的陳述</td></tr><tr><td data-label="誰說">一位 Mastodon 使用者（10/21 17:36 UTC，台灣 10/22 01:36）</td><td data-label="說了什麼">稱以 Express 應用測試 Brotli 輸入，行程被 SIGBUS 終止</td><td data-label="怎麼看">描述的是行程崩潰，不是程式碼執行；貼文也沒有證明就是 CVE-2026-111497</td></tr><tr><td data-label="誰說">一位日本作者的實測（lilting.ch）</td><td data-label="說了什麼">用修補 commit 的測試資料餵新舊版本，兩者都只回報錯誤，作者明說這樣無法判斷越界寫入是否發生</td><td data-label="怎麼看">屬於「沒能重現」，不能當成沒有風險的證據</td></tr></tbody></table></div>
+<p>另外，iThome、SecurityOnline、Cyber Updates 365、cybernote 等報導都明說官方沒有提到在野利用，CISA KEV 在 10/21 14:04 UTC（台灣 22:04）的版本也不含這 10 個 CVE。這個時點早於多數事件，只能當參考。</p>
+<p>結論：<strong>截至本文時點，沒有查到任何來源聲稱在野利用；利用細節沒有公開確認。</strong> 這不等於沒有風險——官方標題就寫了 RCE，只是我們不知道門檻多高。</p>
+<h3>發行版與部署上的坑</h3>
+<p>以下幾點來自二手分析（Atlas、Wardio），各發行版的建置設定未逐一核對，請當成「去確認」的提醒：</p>
+<ul><li>有人指出 Debian、Alpine、Fedora、RHEL 的 nodejs 套件用 <code>--shared-brotli</code> 建置，也就是用系統的 brotli 函式庫。如果是這樣，只換 Node 版本不一定換掉 Brotli，要看發行版有沒有更新 brotli 套件。Alpine 追蹤頁在 10/22 07:04 UTC 前後只列出 edge-community 的 <code>nodejs-current 26.12.1-r0</code> 已修正，這與「要等 brotli 套件」的說法並不一致，可見這個說法不一定適用所有發行版。</li><li>Atlas 說，官方內建 Brotli 的 Node 在修補前後的 <code>process.versions.brotli</code> 都顯示 1.1.0，不能用來判斷；改用系統 brotli 的建置（例如 Homebrew）則會顯示系統函式庫的版本。Atlas 建議的偵測法是看 <code>zlib.constants.BROTLI_DECODER_ERROR_FORMAT_BLOCK_SWITCH</code> 存不存在。這個常數是這次修補一起加進 Node 的，只能判斷 Node 本身的版本；用 <code>--shared-brotli</code> 建置的 Node，還要另外看系統 brotli 套件的版本（<code>node -p &quot;process.config.variables.node_shared_brotli&quot;</code> 可以看是否為 shared 建置）。</li><li>有人指出 Express 5 的 body-parser 2.x 預設會解壓 <code>br</code> 的請求本體，Express 4 則回 415。這是二手說法，影響範圍尚未逐項驗證。</li><li>Vercel 的說法：Node.js 不會自己解 Brotli 資料，應用程式或其依賴的函式庫解壓攻擊者可控的 Brotli 資料時才會暴露，不論是請求本體，還是自己抓回來的回應。這是廠商自述，但可以拿來判斷你的暴露面。</li></ul>
+<h2 id="sec-5">四、TLS 主機名稱驗證這一組</h2>
+<p>三個 TLS 相關項目（105483、106069、106072）都在講「憑證怎麼和主機名稱、IP 對上」。官方公告只給標題，沒有寫攻擊情境。</p>
+<p>我們能確定的有：</p>
+<ul><li>兩個 high 項目 105483 與 106069 的標題都用了「hostname bypass」；105483 只影響 26.x 與 24.x。</li><li>106069 與 106072 的修補標題是「拒絕非標準寫法的 IP」；105483 的修補標題是「修正 IP 正規化的 regression」。細節公告沒寫。</li><li>另外，各 release 頁還有一項沒標 CVE 的安全相關變更：<code>tls: reject chains containing blocked public keys</code>，這就是下一節 eMudhra 封鎖清單。</li></ul>
+<p>至於「實際上可以怎麼攻擊」，公告與 release 頁都沒寫，本文不推測。如果你的服務會用 IP 直接連線、又依賴憑證驗證，升級是唯一明確的處理方式。</p>
+<h2 id="sec-6">五、eMudhra 憑證事件：公告裡那行「ca-cert」</h2>
+<p>公告的依賴更新裡有一行「ca-cert (eMudhra Intermediate CA Compromise)」。這是從 10/17 開始的另一條線，跟 10 個 CVE 沒有關係。</p>
+<p>各方一致的部分：</p>
+<ul><li><strong>範圍</strong>：Mozilla 與 Google 的說明都是 8 張中繼憑證（6 張 TLS、2 張程式碼簽署）的私鑰被還原出來。</li><li><strong>成因</strong>：eMudhra 自己的聲明說，2025-04-30 金鑰儀式的 wrap／unwrap 步驟多產生了一組弱金鑰，弱金鑰被送進瀏覽器根庫。這是 eMudhra 的自述，Mozilla 說仍在跟 CA 追根因。</li><li><strong>處置</strong>：Chrome、Firefox 自 10/17 封鎖，Apple 10/19，Microsoft 10/20（Dennis Jackson 的彙整頁）。Google 說已把 emSign ECC Root CA - G3 從 Chrome Root Store 移除，預計 10/27（週二上午，太平洋夏令時間）對所有裝置生效。</li><li><strong>Node 的做法</strong>：<a href="https://github.com/nodejs/node/pull/66871" target="_blank" rel="noopener noreferrer">PR #66871</a> 在程式內加入一份 SPKI SHA-256 雜湊的封鎖清單，命中時以 <code>X509_V_ERR_CERT_REVOKED</code> 回報。PR 說明稱，這 8 筆雜湊與 Go 的修補（CVE-2026-111943）和 Electron 的修補逐位元組相同。</li></ul>
+<p>為什麼非瀏覽器的程式也要處理？Scott Helme 的文章指出，curl、Python、Node、Go、Java 這些客戶端預設不檢查撤銷，也不檢查 CT，瀏覽器的封鎖不會自動套到它們身上。</p>
+<p>對你有什麼影響：憑證鏈上含那 8 把被封鎖公鑰之一的，升級後 Node 會拒絕。這次 release 也把根憑證更新到 NSS 3.131.1，該版本是否包含 emSign ECC Root CA - G3 的移除，未核對。Google 說 Chrome 未見這些中繼簽發的 TLS 葉憑證進 CT，eMudhra 向 BleepingComputer 表示多數中繼並未用於正式簽發，所以實際受影響的面積可能很小，但要不要確認，取決於你有沒有這條鏈。</p>
+<h2 id="sec-7">六、各方說法對照與澄清</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="表格（可左右捲動）"><table><thead><tr><th scope="col">說法</th><th scope="col">誰說</th><th scope="col">與官方</th><th scope="col">怎麼看</th></tr></thead><tbody><tr><td data-label="說法">Brotli 那項是 critical</td><td data-label="誰說">GBHackers</td><td data-label="與官方">官方是 high</td><td data-label="怎麼看">同一篇文章後面又寫「four high-severity」，自相矛盾，以官方為準</td></tr><tr><td data-label="說法">逾 6000 萬張憑證不可信</td><td data-label="誰說">The Register</td><td data-label="與官方">官方沒談</td><td data-label="怎麼看">該報導談的是 eMudhra 全部簽發量，沒有給出處；Mozilla 與 Google 確認外洩的是 8 張中繼憑證，兩者範圍不同，不能當成外洩規模</td></tr><tr><td data-label="說法">這跟 PHP 同一天修補，是同一件事</td><td data-label="誰說">社群上的混用</td><td data-label="與官方">官方未提及 PHP</td><td data-label="怎麼看">兩者修補日期相同，但我們查到的一手資料沒有指出兩者有技術關聯；SecNews 的評論是「不像 PHP 那樣的危機」，屬該站看法</td></tr><tr><td data-label="說法">風險等級 Medium</td><td data-label="誰說">HKCERT</td><td data-label="與官方">官方是 high（最高）</td><td data-label="怎麼看">各機構自己評級，不必然一致；HKCERT 是目前唯一查到的 CERT 層級公告</td></tr><tr><td data-label="說法">技術細節與 PoC 尚未釋出</td><td data-label="誰說">CyberQ（最後修改於 10/21 17:37 UTC，台灣 10/22 01:37）</td><td data-label="與官方">官方未說</td><td data-label="怎麼看">之後有人自稱貼出觸發測試，Vercel 也稱有研究者示範，兩者都沒有第二個來源確認。這句話有時效，引用時要註明時點</td></tr><tr><td data-label="說法">上游尚未打 tag</td><td data-label="誰說">Atlas</td><td data-label="與官方">與 google/brotli v1.2.1 不符</td><td data-label="怎麼看">該版本在該文發布前就已存在</td></tr><tr><td class="k" data-label="說法">Bun 也受影響</td><td data-label="誰說">Lobsters 一則留言、Atlas</td><td data-label="與官方">官方只談 Node</td><td data-label="怎麼看">都沒有驗證，不下結論</td></tr></tbody></table></div>
+<h2 id="sec-8">七、行動清單</h2>
+<h3>開發與維運</h3>
+<ol class="takeaways"><li>查實際在跑的版本：<code>node -v</code>。要升到 v22.23.4、v24.22.1 或 v26.12.1 以上。</li><li>升級後重啟所有行程，包含 PM2、systemd、Kubernetes 的 Pod。</li><li>容器映像重建，並確認基底映像已含修正版。請以映像內實際的 <code>node -v</code> 為準。</li><li>用 Node 打包的產物（SEA、startup snapshot）要用新版重建，原因見 CVE-2026-106074。</li><li>用發行版套件裝 Node 的主機，去看發行版有沒有發出 brotli 套件的更新，不要只看 Node 版本號。</li><li>還在跑 EOL 版本線的，官方明說 EOL 版本一律受影響，要換到仍在支援的版本線（目前公告涵蓋 22、24、26）。</li><li>暫行措施（二手建議，不取代升級）：在反向代理拒絕帶 <code>Content-Encoding: br</code> 的請求。另外有作者實測 <code>fetch()</code> 對回應的 <code>Content-Encoding: br</code> 會解碼（即使送 <code>Accept-Encoding: identity</code>），所以連到不可信伺服器的程式也要注意。</li></ol>
+<h3>企業 IT</h3>
+<ol class="takeaways"><li>先盤點「內含 Node 的東西」：CI runner 與建置映像、內部工具、桌面應用、第三方產品的 Node 內嵌版本。要向廠商確認，不能假設自己的 Node 版本就是產品用的版本。</li><li>有 TLS 流量走 eMudhra 簽發憑證的，升級前先確認是否在那 8 張中繼的鏈上。</li><li>看外部的防護設定：Vercel 說已對平台上的專案部署 WAF 規則，但稱不涵蓋函式 <code>fetch</code> 外部回應。這是廠商自述，你若用該平台，仍須自己升級依賴。</li></ol>
+<h3>資安同業</h3>
+<ol class="takeaways"><li>官方公告沒有給利用條件。要判斷修補範圍，可以對照 release 頁的 commit 清單與上游 v1.2.1 的 release notes。</li><li>評級各家不同（官方 high、HKCERT Medium、部分媒體寫 critical），引用時標明來源。</li><li>約 07:02–07:05 UTC（台灣 15:02–15:05），cve.org 的 API 對這 10 個 CVE 全部回 404，NVD 已查詢的 3 個為 0 筆。這是時點性結果，資料庫幾小時內會變，引用前再查一次。</li><li>不要把沒有出處的 PoC 說法當成確認。目前有兩則「說有」的說法（Vercel、一位 Mastodon 使用者），另有一則實測沒能重現，都沒有第二個來源。</li></ol>
+<h2 id="sec-9">八、結論</h2>
+<p>這次更新有三件事要分開看：</p>
+<ol class="takeaways"><li><strong>10 個 CVE 本身</strong>：4 個 high 裡，Brotli 那個因為標題寫了 RCE 最受矚目；官方沒給利用條件，所以風險大小目前無法由公告推出來。</li><li><strong>eMudhra 憑證事件</strong>：這是獨立的事，Node 與 Go、Electron 採用同一份封鎖清單，影響面看你的憑證鏈。</li><li><strong>各方說法</strong>：「critical」「6000 萬張」「已有 PoC」這幾句，在我們查到的原始資料裡都對不上，或只有單一來源。</li></ol>
+<p>該做的事不複雜：升級、重啟，容器與打包產物重建，再盤點內含 Node 的東西。爭議的部分可以等官方或上游補上細節再回頭看。</p>
+<h2 id="sec-10">來源清單</h2>
+<p><strong>官方與第一手</strong></p>
+<ul class="sources"><li><a href="https://nodejs.org/en/blog/vulnerability/october-2026-security-releases" target="_blank" rel="noopener noreferrer">Node.js：Wednesday, October 21, 2026 Security Releases</a>（2026-10-21）</li></ul>
+<aside class="note"><p>來源清單的日期，國際來源用 UTC 日期，iThome、HKCERT 用當地日期；僅供查找，時間判斷以正文為準。</p></aside>
+<ul class="sources"><li>Node.js release notes：<a href="https://nodejs.org/en/blog/release/v22.23.4/" target="_blank" rel="noopener noreferrer">v22.23.4</a>、<a href="https://nodejs.org/en/blog/release/v24.22.1/" target="_blank" rel="noopener noreferrer">v24.22.1</a>、<a href="https://nodejs.org/en/blog/release/v26.12.1/" target="_blank" rel="noopener noreferrer">v26.12.1</a></li><li><a href="https://github.com/google/brotli/releases/tag/v1.2.1" target="_blank" rel="noopener noreferrer">google/brotli v1.2.1 release</a>（2026-10-21 19:27 UTC）</li><li><a href="https://github.com/nodejs/node/pull/66871" target="_blank" rel="noopener noreferrer">Node.js PR #66871：eMudhra 封鎖清單</a></li><li><a href="https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/" target="_blank" rel="noopener noreferrer">Google：Protecting Chrome and Android users from compromised eMudhra intermediate CA certificates</a>（2026-10-20）</li><li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id=2083449" target="_blank" rel="noopener noreferrer">Mozilla Bugzilla 2083449</a></li><li><a href="https://emudhra.com/en/press-release/emudhra-statement-distrust-global-tls-intermediate-root-ca" target="_blank" rel="noopener noreferrer">eMudhra 聲明</a>（2026-10-21）</li><li><a href="https://www.hkcert.org/security-bulletin/node-js-multiple-vulnerabilities_20261022" target="_blank" rel="noopener noreferrer">HKCERT：Node.js 多個漏洞</a>（2026-10-22）</li></ul>
+<p><strong>廠商與媒體</strong></p>
+<ul class="sources"><li><a href="https://vercel.com/kb/bulletin/node-js-security-advisory" target="_blank" rel="noopener noreferrer">Vercel：Node.js Security Advisory</a>（廠商自述）</li><li><a href="https://www.ithome.com.tw/news/179887" target="_blank" rel="noopener noreferrer">iThome：Node.js 安全更新</a>（2026-10-22）</li><li><a href="https://www.heise.de/en/news/Node-js-fixes-its-own-and-inherited-security-vulnerabilities-11496143.html" target="_blank" rel="noopener noreferrer">heise online</a>（2026-10-21）</li><li><a href="https://securityonline.info/nodejs-security-release-october-2026/" target="_blank" rel="noopener noreferrer">SecurityOnline</a>（2026-10-21）</li><li><a href="https://cyberq.tw/2026/10/22/nodejs-october-security-update-4-high/" target="_blank" rel="noopener noreferrer">CyberQ 賽博客</a>（2026-10-22）</li><li><a href="https://gbhackers.com/node-js-patches-10-security-vulnerabilities/" target="_blank" rel="noopener noreferrer">GBHackers</a>（2026-10-22）</li><li><a href="https://www.secnews.gr/en/742493/nodejs-cve-2026-111497-brotli-enimerosi/" target="_blank" rel="noopener noreferrer">SecNews</a>（2026-10-21）</li><li><a href="https://brandefense.io/security-news/next-js-node-js-security-updates-october-2026/" target="_blank" rel="noopener noreferrer">Brandefense</a>（2026-10-21）</li><li><a href="https://cyberupdates365.com/nodejs-security-update-2026/" target="_blank" rel="noopener noreferrer">Cyber Updates 365</a>（2026-10-22）</li><li><a href="https://www.cybernote.click/2026/10/22/nodejs-october-2026-security-release-brotli-rce-emudhra/" target="_blank" rel="noopener noreferrer">cybernote</a>（2026-10-22）</li><li><a href="https://lilting.ch/en/articles/nodejs-tls-dns-brotli-security-release" target="_blank" rel="noopener noreferrer">lilting.ch（日文原文英譯）</a>（2026-10-21，作者實測）</li><li><a href="https://atlasum.net/blog/cve-2026-111497-nodejs-brotli-decoder" target="_blank" rel="noopener noreferrer">Atlas：CVE-2026-111497 分析</a>（二手分析）</li><li><a href="https://wardio.net/guides/nodejs-brotli-cve-2026-111497/" target="_blank" rel="noopener noreferrer">Wardio：Node.js Brotli CVE-2026-111497</a>（二手分析）</li><li><a href="https://xenospectrum.com/en/nodejs-october-security-tls-snapshot/" target="_blank" rel="noopener noreferrer">XenoSpectrum</a>（2026-10-21）</li></ul>
+<p><strong>eMudhra 事件</strong></p>
+<ul class="sources"><li><a href="https://emudhra.we-have-a-problem.com/" target="_blank" rel="noopener noreferrer">Dennis Jackson 彙整頁</a></li><li><a href="https://thehackernews.com/2026/10/eight-emudhra-ca-keys-compromised.html" target="_blank" rel="noopener noreferrer">The Hacker News</a></li><li><a href="https://www.bleepingcomputer.com/news/security/mozilla-google-apple-block-compromised-emudhra-ca-certificates/" target="_blank" rel="noopener noreferrer">BleepingComputer</a></li><li><a href="https://scotthelme.co.uk/eight-bits-of-trust-emudhras-ca-keys-cracked-in-milliseconds/" target="_blank" rel="noopener noreferrer">Scott Helme：Eight bits of trust</a></li><li><a href="https://www.theregister.com/security/2026/10/20/indian-certification-authority-emudhras-private-keys-compromised-one-of-them-was-the-number-4/5304312" target="_blank" rel="noopener noreferrer">The Register</a>（2026-10-20）</li></ul>
+<p><strong>社群</strong></p>
+<ul class="sources"><li><a href="https://lobste.rs/s/gu7bow" target="_blank" rel="noopener noreferrer">Lobsters 討論串</a></li></ul>
+</article></main>
+<footer>
+<p>本頁以 nodejs.org 2026-10-21 官方公告為準，整理各方說法並標明來源與時點。事件仍在進行，請以官方最新公告為準。</p>
+</footer>
+</div>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="圖片放大檢視"><button type="button" aria-label="關閉放大檢視">關閉（Esc）</button><img src="" alt=""></div>
+<script>
+(function(){
+  var box=document.getElementById('lightbox'), big=box.querySelector('img'), btn=box.querySelector('button'), last=null;
+  function open(img){last=img;big.src=img.currentSrc||img.src;big.alt=img.alt;box.classList.add('is-open');btn.focus();}
+  function close(){box.classList.remove('is-open');big.removeAttribute('src');if(last){last.focus();}}
+  document.querySelectorAll('figure img').forEach(function(img){
+    img.addEventListener('click',function(){open(img);});
+    img.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open(img);}});
+  });
+  box.addEventListener('click',function(e){if(e.target===box||e.target===btn){close();}});
+  document.addEventListener('keydown',function(e){
+    if(!box.classList.contains('is-open'))return;
+    if(e.key==='Escape'){close();}
+    if(e.key==='Tab'){e.preventDefault();btn.focus();}
+  });
+})();
+</script>
+</body>
+</html>
